@@ -15,3 +15,6 @@
 19-05-2018 19:22:02 | Comprimidos 3 archivos en entrada (19-05-2018 19:22:02).zip. Tamaño del .zip: .076228 megabytes.
 19-05-2018 19:22:05 | Eliminados 2 archivos. Espacio liberado: .152456 megabytes.
 19-05-2018 19:22:09 | Comprimidos 3 archivos en entrada (19-05-2018 19:22:09).zip. Tamaño del .zip: .076228 megabytes.
+23-05-2018 11:02:53 | Comprimidos 3 archivos en entrada (23-05-2018 11:02:53).zip. Tamaño del .zip: .076228 megabytes.
+23-05-2018 11:03:06 | Eliminados 1 archivos. Espacio liberado: .076228 megabytes.
+23-05-2018 11:03:12 | Comprimidos 3 archivos en entrada (23-05-2018 11:03:12).zip. Tamaño del .zip: .076228 megabytes.

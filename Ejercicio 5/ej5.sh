@@ -1,13 +1,27 @@
 #!/bin/bash
 
-#export PATH_ENTRADA="/home/santi/Documents/TP2-20180519T214819Z-001/TP2/Ejercicio 5/entrada"
-#export PATH_SALIDA="/home/santi/Documents/TP2-20180519T214819Z-001/TP2/Ejercicio 5/salida"
+: '  
+    Nombre del script: ej5.sh
+    Trabajo Practico 2 - Ejercicio 5
+    Grupo: 6
+    Gómez Markowicz, Federico - 38858109
+    Kuczerawy, Damián - 37807869
+    Mediotte, Facundo - 39436162
+    Siculin, Luciano - 39213320
+    Tamashiro, Santiago - 39749147
+'
 
 mostrar_ayuda() {
     echo './ej5.sh <archivo>'
     echo 'Donde:'
     echo '<archivo> -> es el archivo de log donde se registrarán los eventos.'
     echo 'Ejemplo: ./ej5.sh log.txt'
+    echo '-------------------------------------------------------------------'
+    echo 'Invoca un script que se ejecuta en segundo plano.'
+    echo 'Este script reacciona ante las señales SIGUSR1 (zipeando los contenidos de PATH_ENTRADA'
+    echo 'en el directorio PATH_SALIDA) y SIGUSR2 (borrando los contenidos del directorio PATH_SALIDA).'
+    echo 'El script listen.sh debe mantenerse en la misma carpeta donde se está ejecutando actualmente,'
+    echo 'y solo debe ser terminado a través de la señal SIGTERM. El resto de las señales son ignoradas.'
     exit
 }
 
@@ -40,66 +54,13 @@ if [ -z $dir ]; then
     error_gen "No se envió ninguna dirección donde generar el archivo log."
 fi
 
-touch $dir
-path=$(readlink -f $dir)
+touch "$dir"
+path=$(readlink -f "$dir")
 
-listen() {
-    echo "El PID del proceso es $$"
+if [ -f "./listen.sh" ]; then
+    chmod 777 ./listen.sh
+    ./listen.sh "$path" &
+else
+    error_gen "No se encontró el script lanzador."
+fi
 
-    zipear() {
-        # muevo a la carpeta de entrada para operar
-        cd "$PATH_ENTRADA"
-        # nombre del archivo
-        base=$(basename "$PATH_ENTRADA")
-        fecha=$(date '+%d-%m-%Y %H:%M:%S')
-        nombre="$base ($fecha).zip"
-        # cuento archivos
-        cont=$(ls -R -1q | awk '
-        $0 && !/^[.]/ {
-            print $0
-        }
-        ' | wc -l)
-        # zipeo
-        zip -r "$nombre" * > /dev/null
-        # calculo el tamaño
-        size=$(wc -c < "$nombre")
-        tam=$(bc -l <<< "scale=6; $size/1000000")
-        # muevo el archivo
-        mv "$nombre" "$PATH_SALIDA"
-        # imprimo en log
-        echo "$fecha | Comprimidos $cont archivos en $nombre. Tamaño del .zip: $tam megabytes." >> "$path"
-    }
-
-    borrar() {
-        # muevo a la carpeta de entrada para operar
-        cd "$PATH_SALIDA"
-        # obtengo fecha
-        fechaf=$(date '+%d-%m-%Y %H:%M:%S')
-        # cuento archivos
-        contf=$(ls -R -1q | awk '
-        $0 && !/^[.]/ {
-            print $0
-        }
-        ' | wc -l)
-        # obtengo tamaño de la carpeta
-        sizef=$(du -b "$PATH_SALIDA" | awk '
-        $1 {
-            print $1
-        }
-        ')
-        sizef=$((sizef-4096))
-        tamf=$(bc -l <<< "scale=6; $sizef/1000000")
-        # elimino archivos
-        rm -r "$PATH_SALIDA"/*
-        # imprimo en log
-        echo "$fechaf | Eliminados $contf archivos. Espacio liberado: $tamf megabytes." >> "$path"
-    }
-
-    trap "zipear" SIGUSR1
-    trap "borrar" SIGUSR2
-    while true; 
-        do sleep 1
-    done
-}
-
-listen &

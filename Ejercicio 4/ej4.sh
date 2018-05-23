@@ -1,9 +1,15 @@
 #!/bin/bash
 
-flagp=
-flagr=
-flagl=
-archivo=
+: '  
+    Nombre del script: ej4.sh
+    Trabajo Practico 2 - Ejercicio 4
+    Grupo: 6
+    Gómez Markowicz, Federico - 38858109
+    Kuczerawy, Damián - 37807869
+    Mediotte, Facundo - 39436162
+    Siculin, Luciano - 39213320
+    Tamashiro, Santiago - 39749147
+'
 
 mostrar_ayuda() {
     echo './ej4.sh <archivo> [opciones]'
@@ -15,6 +21,9 @@ mostrar_ayuda() {
     echo '-p: Solo puede utilizarse en conjunto con -r. Muestra por pantalla las horas totales trabajadas de cada trabajador.'
     echo '-r y -l no pueden usarse en conjunto.'
     echo 'Ejemplo: ./ej4.sh horario_201805.log -r -p'
+    echo '-------------------------------------------------------------------'
+    echo 'Procesa la planilla de horas trabajadas e indicará información según la opción enviada.'
+    echo 'Este script requiere que se envie al menos una de las opciones -r o -l.'
     exit
 }
 
@@ -24,6 +33,10 @@ error_gen() {
     exit
 }
 
+flagp=
+flagr=
+flagl=
+archivo=
 while [ $# -ne 0 ]; do
     case $1 in
         -h|-\?|-help)
