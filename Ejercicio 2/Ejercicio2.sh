@@ -84,7 +84,7 @@ sed -i 's/^./\u&/' "$dest" # Pone la primer letra de cada linea en mayúscula
 sed -i -e 's/  */ /g' -e 's/^ *\(.*\) *$/\1/' "$dest" # Elimina espacios de más
 sed -i 's/\.[a-z]/\U&/g' "$dest" # Mayus después de los puntos
 sed -i 's/[.,;:]/& /g' "$dest" # Agrega espacios
-sed -i 's/\s$//g' "$dest" # Elimino los espacios que agregué al pedo
+sed -i 's/\s$//g' "$dest" # Elimino los espacios que agregué
 
 # dejo ciertas palabras iguales
 palabras=$(echo $(cat "$arch2") | tr ";" "\n")
