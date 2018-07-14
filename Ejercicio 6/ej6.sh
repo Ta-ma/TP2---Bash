@@ -22,6 +22,8 @@ get_help() {
 	echo
 	echo 'PATH -> directorio raiz a analizar su contenido.'
 	echo '-f -> (Opcional) incluye a los archivos con espacio en su nombre'	
+  echo 'esta opción debe utilizarse si algún subdirectorio tiene espacio en su nombre'
+  echo 'de lo contrario los resultados pueden ser impredecibles.'	
 	echo
 	echo 'Ejemplos: ./ej6 /var -f'
 	echo '          ./ej6 /var '
@@ -52,37 +54,15 @@ fi
 
 validar $1 $2 $3
 dir=$1
-if [ -f "lista.txt" ];then
-	rm "lista.txt"
+
+if [ "$2" = $'-f' ]; then
+  IFS=$'\n'
 fi
-aux=0
-if [ $# -eq 2 ] ;then
-	if [ $2 = '-f' ] ;then
-		IFS='
-		'
-	fi
-fi
-cont=
-for arch in $(find $dir -type d) 
-do	
-	size=0
-	cont=0
-	for a in $(find $arch -maxdepth 1)
-		do
-		(( cont++ ))
-		if [ -d $a -a $cont -ne 1 ] ;then
-			aux=1
-			#echo "$aux $a"
-		else
-			cont=`ls $arch | wc -l`
-			size=`du -sb -h $arch | cut -f1`
-            sizeb=`du -sb $arch | cut -f1`
-			#echo "$aux $a"
-		fi	
-	done
-	if [ $aux -eq 0 -a $cont -ge 1 ] ;then
-		echo "$(dirname $a) $size ($sizeb bytes) $cont arch"
-	fi
-	aux=0
-	cont=0
+
+for arch in $(find $dir -type d -links 2)
+do
+  sizeh=$(du -h --apparent-size "$arch" | cut -f1)
+  sizeb=$(du -b --apparent-size "$arch" | cut -f1)
+  cont=$(find $arch -type f | wc -l)
+  echo "$arch $sizeh ($sizeb bytes) $cont archivos"
 done | sort -t " " -k 3 -r | head -10

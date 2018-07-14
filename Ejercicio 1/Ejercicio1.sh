@@ -26,14 +26,14 @@ case $1 in
 		exit;;
 esac
 if ! [ -f "$1" ]; then
-	echo "Archivo no existe o no es un archivo regular"
+	echo "Archivo no existe o no es un archivo regular."
 	exit
 fi
 file -i "$1" | grep text/plain >> /dev/null
 
 if [ $? != 0 ]
 then
-	echo "El archivo enviado como parámetro no es un archivo plano"
+	echo "El archivo enviado como parámetro no es un archivo plano."
 	exit
 fi
 
@@ -43,7 +43,7 @@ sed 's/[A-Z]*/\L&/g' "$1" > "$ARCH1" #Pone la primer letra de cada linea en may�
 sed -i 's/^./\u&/' "$ARCH1" # Pone las siguientes letras en minúscula
 mv "$ARCH1" "$1"
 
-# 1. La línea #!/bin/bash especifica con que interprete se debe ejecutar el script, en este ejemplo se debe ejecutar con bash.
+# 1. La línea #!/bin/bash especifica con que intérprete se debe ejecutar el script, en este ejemplo se debe ejecutar con bash.
 
 # 2. Se le da permisos de ejecucion al script mediante el comando chmod +x ejercicio1.sh
 
