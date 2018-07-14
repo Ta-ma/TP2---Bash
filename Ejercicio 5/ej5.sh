@@ -51,7 +51,15 @@ while [ $# -ne 0 ]; do
 done
 
 if [ -z $dir ]; then
-    error_gen "No se envió ninguna dirección donde generar el archivo log."
+  error_gen "No se envió ninguna dirección donde generar el archivo log."
+fi
+
+if [ ! -d "$PATH_ENTRADA" ]; then
+  error_gen "La variable de entorno PATH_ENTRADA no ha sido asignada o no apunta a un directorio válido."
+fi
+
+if [ ! -d "$PATH_SALIDA" ]; then
+  error_gen "La variable de entorno PATH_SALIDA no ha sido asignada o no apunta a un directorio válido."
 fi
 
 touch "$dir"

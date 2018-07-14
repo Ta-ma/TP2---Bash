@@ -2,7 +2,7 @@
 
 : '  
     Nombre del script: ej3.sh
-    Trabajo Practico 2 - Ejercicio 3
+    Trabajo Práctico 2 - Ejercicio 3
     Grupo: 6
     Gómez Markowicz, Federico - 38858109
     Kuczerawy, Damián - 37807869
@@ -42,7 +42,7 @@ while [ $# -ne 0 ]; do
         ;;
         -i)
             if [ -z $insensitive ]; then
-                insensitive=true
+                insensitive=1
             else
                 error_gen "Se enviaron varias veces el mismo parámetro: $1"
             fi
@@ -63,7 +63,7 @@ while [ $# -ne 0 ]; do
 done
 
 if [ -z $insensitive ]; then
-    insensitive=false
+    insensitive=0
 fi
 
 if [ -z $archA ]; then
@@ -90,9 +90,42 @@ else
     fi
 fi
 
+awk -v ci=$insensitive '
+  BEGIN {
+    tamA = 0;
+  }
+
+  NR == FNR {
+    str = ci ? tolower($1) : $1
+    a[str] = 0;
+    tamA++;
+    next;
+  }
+
+  {
+    for(i = 1; i <= NF; i++) {
+      palabra = ci ? tolower($i) : $i
+      if (palabra in a)
+        a[palabra]++;
+      else
+        noEnA[palabra]
+    }
+  }
+
+  END {
+    cantNoEnA = 0;
+    for (key in a) {
+      print sprintf("%s: %d", key, a[key]);
+    }
+    for (key in noEnA) {
+      cantNoEnA++;
+    }
+    print sprintf("No están en A: %d", cantNoEnA);
+  } ' "$archA" "$archB"
+
+: ' Resolución original
 contA=$(cat "$archA")
 contB=$(cat "$archB")
-
 if $insensitive; then
     contA=$(printf %s "$contA" | tr [:upper:] [:lower:])
     contB=$(printf %s "$contB" | tr [:upper:] [:lower:])
@@ -117,3 +150,4 @@ while read -r linea; do
 done <<< "$contA"
 
 echo "No existen en A: $contNoEnA"
+'
