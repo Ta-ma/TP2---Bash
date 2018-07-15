@@ -19,7 +19,7 @@ mostrar_ayuda() {
     echo '-l: Mostrará las horas totales sin generar archivos.'
     echo '-r: Se guardarán las horas totales en un archivo por cada trabajador.'
     echo '-p: Solo puede utilizarse en conjunto con -r. Muestra por pantalla las horas totales trabajadas de cada trabajador.'
-    echo '-r y -l no pueden usarse en conjunto.'
+    echo '-r y -l pueden usarse en conjunto.'
     echo 'Ejemplo: ./ej4.sh horario_201805.log -r -p'
     echo '-------------------------------------------------------------------'
     echo 'Procesa la planilla de horas trabajadas e indicará información según la opción enviada.'
@@ -37,6 +37,7 @@ flagp=
 flagr=
 flagl=
 archivo=
+leg_clave=
 while [ $# -ne 0 ]; do
     case $1 in
         -h|-\?|-help)
@@ -69,6 +70,8 @@ while [ $# -ne 0 ]; do
         *)
             if [ -z $archivo ]; then
                 archivo="$1"
+            elif [ -z $leg_clave ]; then
+                leg_clave="$1"
             else
                 error_gen "Parámetros incorrectos."
             fi
@@ -94,86 +97,94 @@ fi
 # validar opciones
 if [ -z $flagr ] && [ -z $flagl ]; then
     error_gen "Debe utilizar alguna de las opciones -r o -l para que el script haga algo."
-elif [ ! -z $flagr ] && [ ! -z $flagl ]; then
-    error_gen "Sólo se puede utilizar una de las opciones -r o -l."
 elif [ ! -z $flagp ] && [ -z $flagr ]; then
     error_gen "El parámetro -p solo puede utilizarse en conjunto con -r."
+elif [ -z $leg_clave ] && [ ! -z $flagl ]; then
+    error_gen "No se ha especificado ningún legajo por parámetro."
 fi
+
+ut_hm() {
+ ((h=${1}/3600))
+ ((m=(${1}%3600)/60))
+ printf "%02d:%02d" $h $m
+}
+
+ut_h() {
+ ((h=${1}/3600))
+ printf "%02d:00" $h
+}
 
 str="${nombre##*_}"
 str2="${str%%.*}"
 anio=${str:0:4}
 mes=${str:4:2}
+declare -A legajos
+ttot=
 
-contenido=$(cat $archivo)
-text=$(echo $contenido | awk -v anio=$anio -v mes=$mes -v r=$flagr -v p=$flagp -v l=$flagl '
-        BEGIN {
-            FS = ";"
-            RS = " "
-        }
-        {
-            legajo = $1
-            archivo = sprintf("%s_%.4d%.2d.reg", $1, anio, mes)
+while read linea; do
+  IFS=';' read -r -a array <<< "$linea"
+  if [ ${#array[@]} -eq 4 ]; then
+    legajo=${array[0]}
+    hin=$(date -u -d "${array[2]}" +"%s")
+    heg=$(date -u -d "${array[3]}" +"%s")
+    tt=$((heg-hin))
 
-            split($3,a,":")
-            split($4,b,":")
-            t1 = a[1] * 3600 + a[2] * 60 + a[3]
-            t2 = b[1] * 3600 + b[2] * 60 + b[3]
-            resta = t2 - t1
-            horas = int(resta / 3600)
-            sobra = (resta % 3600)
-            minutos = int(sobra / 60)
+    if [ ! ${legajos[$legajo]+abc} ] && [ $flagr ]; then
+      arch="$legajo"_"$anio$mes.reg"
+      printf "" > $arch
+    fi
 
-            if(legajo in vec) {
-                vec[legajo] += resta
-            } else {
-                if (r) printf "" > archivo
-                vec[legajo] = resta
-            }
+    legajos["$legajo"]=$((legajos["$legajo"]+tt))
+    ttot=$((ttotales+tt))
+    if [ $flagr ]; then
+      arch="$legajo"_"$anio$mes.reg"
+      fecha="${array[1]}/$mes/$anio"
+      ts_ttot=$(ut_hm $ttot)
 
-            if (r) {
-                printf("%s;%.2d/%.2d/%.2d;", $1, $2, mes, anio) >> archivo
-                printf("%.2d:%.2d:%.2d;", a[1], a[2], a[3]) >> archivo
-                printf("%.2d:%.2d:%.2d;", b[1], b[2], b[3]) >> archivo
-                printf("%.2d:%.2d\n", horas, minutos) >> archivo
-                close(archivo)
-            }
-        }
-        END {
-            if (l) {
-                for(legajo in vec) {
-                    horasf = int(vec[legajo] / 3600)
-                    sobraf = (vec[legajo] % 3600)
-                    minutosf = int(sobraf / 60)
-                    horasx = horasf - 184
+      echo "$legajo;$fecha;${array[2]};${array[3]};$ts_ttot" >> $arch
+    fi
+  fi
+done < <(grep "" "$archivo")
 
-                    print sprintf("Legajo: %.6d", legajo)
-                    print "......................................................................"
-                    print sprintf("Total de horas teóricas: 184:00")
-                    print sprintf("Total de horas trabajadas: %.2d:%.2d", horasf, minutosf)
-                    print sprintf("Horas extra: %.2d:00\n", horasx > 0 ? horasx : 0)
-                    print ""
-                }
-            }
-            if (r) {
-                for(legajo in vec) {
-                    archivof = sprintf("%.6d_%.4d%.2d.reg", legajo, anio, mes)
-                    horasf = int(vec[legajo] / 3600)
-                    sobraf = (vec[legajo] % 3600)
-                    minutosf = int(sobraf / 60)
-                    horasx = horasf - 184
+if [ $flagr ]; then
+  for leg in "${!legajos[@]}"
+  do
+    arch="$leg"_"$anio$mes.reg"
+    horast=$(ut_hm "${legajos[$leg]}")
+    horash=
+    dif=$((${legajos[$leg]} - 662400))
+    if [ $dif -le 0 ]; then
+      horash='0:00'
+    else
+      horash=$(ut_h $dif)
+    fi
+    echo "-----------------------------------------" >> $arch
+    echo "Total de horas teóricas: 184:00" >> $arch
+    echo "Total de horas trabajadas: $horast" >> $arch
+    echo "Horas Extra: $horash" >> $arch
+    if [ $flagp ]; then
+      echo "Legajo: $leg, horas trabajadas: $horast"
+    fi
+  done
+fi
 
-                    printf "......................................................................\n" >> archivof
-                    printf("Total de horas teóricas: 184:00\n") >> archivof
-                    printf("Total de horas trabajadas: %.2d:%.2d\n", horasf, minutosf) >> archivof
-                    printf("Horas extra: %.2d:00", horasx > 0 ? horasx : 0) >> archivof
-                    close(archivof)
+if [ $flagl ]; then
+  if [ ! ${legajos[$leg_clave]+abc} ]; then
+    error_gen "El legajo especificado por parámetro no existe."
+  fi
 
-                    if (p)
-                        print sprintf("Legajo: %.6d - Horas trabajadas: %.2d:%.2d", legajo, horasf, minutosf)
-                }
-            }
-        }
-        ')
-
-echo "$text"
+  horast=$(ut_hm "${legajos[$leg_clave]}")
+  horash=
+  dif=$((${legajos[$leg_clave]} - 662400))
+  if [ $dif -le 0 ]; then
+    horash='0:00'
+  else
+    horash=$(ut_h $dif)
+  fi
+  echo
+  echo "Legajo: $leg_clave"
+  echo "-----------------------------------------"
+  echo "Total de horas teóricas: 184:00"
+  echo "Total de horas trabajadas: $horast"
+  echo "Horas Extra: $horash"
+fi
