@@ -122,32 +122,3 @@ awk -v ci=$insensitive '
     }
     print sprintf("No están en A: %d", cantNoEnA);
   } ' "$archA" "$archB"
-
-: ' Resolución original
-contA=$(cat "$archA")
-contB=$(cat "$archB")
-if $insensitive; then
-    contA=$(printf %s "$contA" | tr [:upper:] [:lower:])
-    contB=$(printf %s "$contB" | tr [:upper:] [:lower:])
-fi
-
-palabras=$(echo $contB | tr ";" "\n")
-contPalabrasB=0
-for palabra in $palabras; do
-    ((contPalabrasB++))
-done
-contNoEnA=$contPalabrasB
-
-while read -r linea; do
-    cont=0
-    for palabra in $palabras; do
-        if [ $palabra = $linea ]; then
-            ((cont++))
-            ((contNoEnA--))
-        fi
-    done
-    echo "$linea: $cont"
-done <<< "$contA"
-
-echo "No existen en A: $contNoEnA"
-'
